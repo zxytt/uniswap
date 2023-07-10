@@ -1,42 +1,29 @@
 import React, { useCallback, useMemo, useState } from 'react'
-import { Input, Select, Button } from 'antd'
+import { Input, Button } from 'antd'
 import { ArrowDownOutlined } from '@ant-design/icons';
 import './swap.css'
 import { ethers } from 'ethers'
-
-const { Option } = Select;
-const coins = [
-  {
-    value: 'ETH',
-    img: require('../../assets/eth.png')
-  },
-  {
-    value: 'DAI',
-    img: require('../../assets/dai.png')
-  },
-  {
-    value: 'USDT',
-    img: require('../../assets/usdt.png')
-  }
-]
+import { QUOTER_CONTRACT_ADDRESS, POOL_FACTORY_CONTRACT_ADDRESS, USDT_TOKEN, DAI_TOKEN } from './constants'
+import { computePoolAddress } from '@uniswap/v3-sdk'
+import Quoter from '@uniswap/v3-periphery/artifacts/contracts/lens/Quoter.sol/Quoter.json'
+import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json'
+import { FeeAmount } from '@uniswap/v3-sdk'
+import { fromReadableAmount, toReadableAmount } from '../libs/conversion'
 
 function Swap() {
   const [isConnect, setIsConnect] = useState(false)
-  const [accounts, setAccounts] = useState([])
-  const selectBefore = (val) => {
+  const [account, setAccount] = useState({
+    name: [],
+    signer: ''
+  })
+  const [amountIn, setAmountIn] = useState()
+  const [amountOut, setAmountOut] = useState()
+  const inputBefore = (val) => {
     return (
-      <Select defaultValue={val} className="select-after">
-        {
-          coins.map(coin => (
-            <Option key={coin.value} value={coin.value} >
-              <div className="select-option">
-                <img className="img" src={coin.img} alt="" />
-                <span className="span">{coin.value}</span>
-              </div>
-            </Option>
-          ))
-        }
-      </Select>
+      <div className="select-option">
+        <img className="img" src={val.img} alt="" />
+        <span className="span">{val.name}</span>
+      </div>
     )
   }
   // 连接钱包
@@ -48,13 +35,16 @@ function Swap() {
     console.log('signer', signer);
     if(signer) {
       setIsConnect(true)
-      setAccounts(accounts)
+      setAccount({
+        name: accounts,
+        signer
+      })
     }
   }
   const walletInfoRender = (
     isConnect
     ?
-    accounts.join(' ')
+    account.name.join(' ')
     :
     (
       <Button type="primary" shape="round" onClick={connectWallet}>
@@ -62,6 +52,48 @@ function Swap() {
       </Button>
     )
   )
+  const changeAmountIn = async (val) => {
+    console.log('val', val);
+    setAmountIn(Number(val))
+    const quoterContract = new ethers.Contract(
+      QUOTER_CONTRACT_ADDRESS,
+      Quoter.abi,
+      account.signer
+    )
+    console.log('quoterContract', quoterContract);
+    const currentPoolAddress = computePoolAddress({
+      factoryAddress: POOL_FACTORY_CONTRACT_ADDRESS,
+      tokenA: USDT_TOKEN,
+      tokenB: DAI_TOKEN,
+      fee: FeeAmount.MEDIUM,
+    })
+    console.log('currentPoolAddress', currentPoolAddress);
+  
+    const poolContract = new ethers.Contract(
+      currentPoolAddress,
+      IUniswapV3PoolABI.abi,
+      account.signer
+    )
+    console.log('poolContract', poolContract);
+    const [token0, token1, fee] = await Promise.all([
+      poolContract.token0(),
+      poolContract.token1(),
+      poolContract.fee(),
+    ])
+    console.log(token0, token1, fee)
+    const quotedAmountOut = await quoterContract.callStatic.quoteExactInputSingle(
+      token0,
+      token1,
+      fee,
+      fromReadableAmount(
+        Number(val),
+        USDT_TOKEN.decimals
+      ).toString(),
+      0
+    )
+    const money = toReadableAmount(quotedAmountOut, DAI_TOKEN.decimals)
+    console.log('money', money);
+  }
   
   return (
     <div className="wrapper">
@@ -69,9 +101,17 @@ function Swap() {
         {walletInfoRender}
       </div>
       <div className="select-wrapper">
-        <Input addonBefore={selectBefore('ETH')}/>
+        <Input addonBefore={inputBefore({
+          img: 'https://raw.githubusercontent.com/compound-finance/token-list/master/assets/asset_USDT.svg',
+          name: 'USDT'
+        })} value={amountIn} onChange={(e) => {
+          changeAmountIn(e.target.value)
+        }}/>
           <ArrowDownOutlined />
-        <Input addonBefore={selectBefore('DAI')}/>
+        <Input addonBefore={inputBefore({
+          img: 'https://raw.githubusercontent.com/compound-finance/token-list/master/assets/asset_DAI.svg',
+          name: 'DAI'
+        })} value={amountOut} />
       </div>
     </div>
   )
