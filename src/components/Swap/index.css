@@ -1,0 +1,20 @@
+.wrapper{
+  margin: 100px auto;
+  width: 500px;
+  height: 300px;
+  border: 1px solid #ccc;
+  border-radius: 16px;
+  padding: 15px 20px;
+  font-size: 16px;
+}
+.nav{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.icon{
+  cursor: pointer;
+}
+.icon:hover{
+  color: #aaa;
+}

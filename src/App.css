@@ -1,1 +1,17 @@
 @import '~antd/dist/antd.css';
+.App{
+  position: relative;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  padding: 10px;
+}
+.info{
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.address{
+  margin-right: 10px;
+}
+
