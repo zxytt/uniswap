@@ -11,10 +11,50 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 5px;
 }
 .icon{
   cursor: pointer;
 }
 .icon:hover{
   color: #aaa;
+}
+.popover-item{
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.popover-item-text{
+  white-space: nowrap;
+  width: 160px;
+  text-align: right;
+  padding-right: 10px;
+}
+.popover-item-input{
+  width: 150px;
+}
+.ant-input-group-addon{
+  width: 50px;
+}
+.content{
+  position: relative;
+  top: 0;
+  left: 0;
+}
+.change{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  text-align: center;
+  line-height: 40px;
+  transform: translate(-50%, -50%);
+  border-radius: 12px;
+  background-color: rgb(232, 236, 251);
+  cursor: pointer;
+}
+.swap{
+  margin-top: 10px;
+  text-align: center;
 }
