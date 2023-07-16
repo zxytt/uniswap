@@ -37,8 +37,10 @@ function App() {
       const provider = await new ethers.providers.Web3Provider(window.ethereum)
       setProvider(provider)
       const res0 = getTokenContract(token0)
+      console.log('res0', res0);
       setToken0Contract(res0)
       const res1 = getTokenContract(token1)
+      console.log('res1', res1);
       setToken1Contract(res1)
     }
     onLoad()
@@ -51,12 +53,11 @@ function App() {
     const val = provider.getSigner()
     setSigner(val)
     val.getAddress().then(async address => {
-      setSignerAddress(address.slice(0, 10))
+      setSignerAddress(address)
       // 获取钱包中币的余额
-      console.log(token0Contract);
-      const res = token0Contract.balanceOf(address)
+      // token0Contract.balanceOf(address)
       // .then(res => {
-        console.log('res', res);
+        // console.log('res', res);
       //   setToken0Amount(Number(ethers.utils.formatEther(res)))
       // })
       // token1Contract.balanceOf(address).then(res => {

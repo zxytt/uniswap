@@ -37,6 +37,7 @@ function Swap(props) {
   }
 
   const getSwapPrice = (inputAmount) => {
+    console.log('inputAmount', inputAmount);
     const swap = getPrice(
       inputAmount, 
       slippage, 
