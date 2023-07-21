@@ -53,15 +53,14 @@ export const getTokenContract = (token, provider) => new ethers.Contract(token.a
 
 export const getPrice = async (inputAmount, slippageAmount, deadline, walletAddress, provider) => {
   const percentSlippage = new Percent(slippageAmount, 100) // 转换为百分比
+  console.log('percentSlippage', percentSlippage)
   const wei = ethers.utils.parseUnits(inputAmount.toString(), token0.decimals) // 金额转换为字符串
+  console.log('wei', wei)
   const currencyAmount = CurrencyAmount.fromRawAmount(TOKEN0, JSBI.BigInt(wei))
   const router = new AlphaRouter({
     chainId: chainId,
     provider: provider
   })
-  console.log('percentSlippage', percentSlippage);
-  console.log('wei', wei);
-  console.log('currencyAmount', currencyAmount);
   const route = await router.route(
     currencyAmount,
     TOKEN1,
@@ -70,7 +69,6 @@ export const getPrice = async (inputAmount, slippageAmount, deadline, walletAddr
       recipient: walletAddress,
       slippageTolerance: percentSlippage,
       deadline: deadline,
-      type: SwapType.SWAP_ROUTER_02,
     }
   )
   console.log('route', route);
