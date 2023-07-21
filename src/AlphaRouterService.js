@@ -1,4 +1,4 @@
-import { AlphaRouter } from '@uniswap/smart-order-router'
+import { AlphaRouter, SwapType } from '@uniswap/smart-order-router'
 import { Token, CurrencyAmount, TradeType, Percent } from '@uniswap/sdk-core'
 import { FeeAmount, computePoolAddress } from '@uniswap/v3-sdk'
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json'
@@ -10,19 +10,19 @@ const UNISWAP_V3_ROUTER_ADDRESS = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
 const INFURA_URL_TESTNET = process.env.REACT_APP_INFURA_URL_TESTNET
 console.log('INFURA_URL_TESTNET', INFURA_URL_TESTNET);
 const chainId = 3
-const web3Provider = new ethers.providers.JsonRpcProvider(INFURA_URL_TESTNET)
-console.log('web3Provider', web3Provider);
-const router = new AlphaRouter({
-  chainId: chainId,
-  provider: web3Provider
-})
-
+// const web3Provider = new ethers.providers.JsonRpcProvider(window.ethereum)
+// console.log('web3Provider', web3Provider);
+// const router = new AlphaRouter({
+//   chainId: chainId,
+//   provider: web3Provider
+// })
+// console.log('router', router);
 export const token0 = {
   name: 'Wrapped Ether',
   symbol: 'WETH',
   decimals: 18,
   address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-  image: require('./assets/dai.png')
+  image: require('./assets/weth.png')
 }
 
 export const token1 = {
@@ -30,29 +30,38 @@ export const token1 = {
   symbol: 'UNI',
   decimals: 18,
   address: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
-  image: require('./assets/usdt.png')
+  image: require('./assets/uni.png')
 }
 
 const TOKEN0 = new Token(chainId, token0.address, token0.decimals, token0.symbol, token0.name)
 const TOKEN1 = new Token(chainId, token1.address, token1.decimals, token1.symbol, token1.name)
 const ERC20_ABI = [
-  // Read-Only Functions
-  'function balanceOf(address owner) view returns (uint256)',
-  'function decimals() view returns (uint8)',
-  'function symbol() view returns (string)',
+  // Some details about the token
+  "function name() view returns (string)",
+  "function symbol() view returns (string)",
 
-  // Authenticated Functions
-  'function transfer(address to, uint amount) returns (bool)',
+  // Get the account balance
+  "function balanceOf(address) view returns (uint)",
 
-  // Events
-  'event Transfer(address indexed from, address indexed to, uint amount)',
+  // Send some of your tokens to someone else
+  "function transfer(address to, uint amount)",
+
+  // An event triggered whenever anyone transfers to someone else
+  "event Transfer(address indexed from, address indexed to, uint amount)"
 ]
-export const getTokenContract = (token) => new ethers.Contract(token.address, ERC20_ABI, web3Provider)
+export const getTokenContract = (token, provider) => new ethers.Contract(token.address, ERC20_ABI, provider)
 
-export const getPrice = async (inputAmount, slippageAmount, deadline, walletAddress) => {
+export const getPrice = async (inputAmount, slippageAmount, deadline, walletAddress, provider) => {
   const percentSlippage = new Percent(slippageAmount, 100) // 转换为百分比
   const wei = ethers.utils.parseUnits(inputAmount.toString(), token0.decimals) // 金额转换为字符串
   const currencyAmount = CurrencyAmount.fromRawAmount(TOKEN0, JSBI.BigInt(wei))
+  const router = new AlphaRouter({
+    chainId: chainId,
+    provider: provider
+  })
+  console.log('percentSlippage', percentSlippage);
+  console.log('wei', wei);
+  console.log('currencyAmount', currencyAmount);
   const route = await router.route(
     currencyAmount,
     TOKEN1,
@@ -60,9 +69,11 @@ export const getPrice = async (inputAmount, slippageAmount, deadline, walletAddr
     {
       recipient: walletAddress,
       slippageTolerance: percentSlippage,
-      deadline: deadline
+      deadline: deadline,
+      type: SwapType.SWAP_ROUTER_02,
     }
   )
+  console.log('route', route);
   const transaction = {
     data: route.methodParameters.calldata,
     to: UNISWAP_V3_ROUTER_ADDRESS,
@@ -71,6 +82,7 @@ export const getPrice = async (inputAmount, slippageAmount, deadline, walletAddr
     gasPrice: BigNumber.from(route.gasPriceWei),
     gasLimit: ethers.utils.hexlify(1000000)
   }
+  console.log('transaction', transaction);
   const quoteAmountOut = route.quote.toFixed(6)
   const ratio = (quoteAmountOut / inputAmount).toFixed(3)
   return [ transaction, quoteAmountOut, ratio ]

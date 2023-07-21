@@ -6,11 +6,10 @@ import Field from '../Field'
 import { token0, token1, getPrice, runSwap } from '../../AlphaRouterService'
 
 function Swap(props) {
-  const { signerAddress } = props
+  const { provider, signerAddress, balance0, balance1 } = props
   const [slippage, setSlippage] = useState(5)
   const [deadline, setDeadline] = useState(10)
-  const [balance0, setBalance0] = useState(0)
-  const [balance1, setBalance1] = useState(0)
+  
   const [transaction, setTransaction] = useState(undefined)
   const [ratio, setRatio] = useState(undefined)
   const [inputAmount, setInputAmount] = useState(undefined)
@@ -37,12 +36,15 @@ function Swap(props) {
   }
 
   const getSwapPrice = (inputAmount) => {
+    console.log(inputAmount, signerAddress, provider);
     const swap = getPrice(
       inputAmount, 
       slippage, 
       Math.floor(Date.now() / 1000) + (deadline * 60),
-      signerAddress
+      signerAddress,
+      provider
     ).then(data => {
+      console.log('data', data);
       setTransaction(data[0])
       setOutputAmount(data[1])
       setRatio(data[2])

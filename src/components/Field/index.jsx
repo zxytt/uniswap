@@ -10,7 +10,6 @@ function Field(props) {
       <div className="input-wrapper">
         <Input value={amount} placeholder='0' size='large' className='input' onBlur={(e) => {
           let val = Number(e.target.value)
-          console.log(val);
           if(type === 'input') {
             setAmount(val)
             // 获取价格

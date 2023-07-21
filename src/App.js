@@ -10,7 +10,9 @@ function App() {
   const [activeKey, setActiveKey] = useState('swap')
   const [provider, setProvider] = useState(undefined)
   const [signer, setSigner] = useState(undefined) 
-  const [signerAddress, setSignerAddress] = useState(undefined) 
+  const [signerAddress, setSignerAddress] = useState(undefined)
+  const [balance0, setBalance0] = useState(0)
+  const [balance1, setBalance1] = useState(0) 
   const [token0Contract, setToken0Contract] = useState(undefined)
   const [token1Contract, setToken1Contract] = useState(undefined)
   const [token0Amount, setToken0Amount] = useState(undefined)
@@ -20,7 +22,12 @@ function App() {
     {
       label: 'Swap',
       key: 'Swap',
-      children: <Swap signerAddress={signerAddress}/>
+      children: <Swap 
+        provider={provider}
+        signerAddress={signerAddress}
+        balance0={balance0}
+        balance1={balance1}
+      />
     },
     {
       label: 'Pool',
@@ -32,38 +39,31 @@ function App() {
   const handleChange = (key) => {
     setActiveKey(key)
   }
-  useEffect(() => {
-    const onLoad = async () => {
-      const provider = await new ethers.providers.Web3Provider(window.ethereum)
-      setProvider(provider)
-      const res0 = getTokenContract(token0)
-      setToken0Contract(res0)
-      const res1 = getTokenContract(token1)
-      setToken1Contract(res1)
-    }
-    onLoad()
-  }, [])
+  const onLoad = async () => {
+    const provider = await new ethers.providers.Web3Provider(window.ethereum)
+    console.log('provider', provider);
+    setProvider(provider)
+    const res0 = getTokenContract(token0, provider)
+    setToken0Contract(res0)
+    const res1 = getTokenContract(token1, provider)
+    setToken1Contract(res1)
+  }
   // 是否连接钱包
   const isConnect = () => !!signer
   // 连接钱包
   const handleConnect = async () => {
-    provider.send('eth_requestAccounts', [])
+    await provider.send('eth_requestAccounts', [])
     const val = provider.getSigner()
     setSigner(val)
     val.getAddress().then(async address => {
-      setSignerAddress(address.slice(0, 10))
-      // 获取钱包中币的余额
-      console.log(token0Contract);
-      const res = token0Contract.balanceOf(address)
-      // .then(res => {
-        console.log('res', res);
-      //   setToken0Amount(Number(ethers.utils.formatEther(res)))
-      // })
-      // token1Contract.balanceOf(address).then(res => {
-      //   setToken1Amount(Number(ethers.utils.formatEther(res)))
-      // })
+      setSignerAddress(address)
+      const balance = ethers.utils.formatEther(await provider.getBalance(address))
+      setBalance0(balance)
     })
   }
+  useEffect(() => {
+    onLoad()
+  }, [])
   return (
     <div className='App'>
       <Tabs 
